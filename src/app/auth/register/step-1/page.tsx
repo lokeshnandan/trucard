@@ -25,6 +25,7 @@ export default function RegisterStep1() {
     handleSubmit,
     formState: { errors },
     getValues,
+    setValue,
   } = useForm<Values>({
     resolver: zodResolver(schema),
     defaultValues: { mobile: "", email: "" },
@@ -44,6 +45,9 @@ export default function RegisterStep1() {
 
   const [emailOtpRef, setEmailOtpRef] = useState<string | null>(null);
 
+  const [smsOtp, setSmsOtp] = useState<string | null>(null);
+  const [emailOtp, setEmailOtp] = useState<string | null>(null);
+
   async function onSendSmsOtp() {
     setLoadingSmsOtp(true);
     try {
@@ -51,6 +55,10 @@ export default function RegisterStep1() {
       const response = await createRegistration(mobile);
       if (response.success) {
         // createRegistration stores ref_id and shows otp toast from api helper
+        const otp = response.data?.otp_code ?? null;
+        setSmsOtp(otp);
+        // autofill form field
+        setValue("smsOtp", otp ?? "");
         setSmsOtpSent(true);
       } else {
         alert(`Failed to create registration: ${response.error}`);
@@ -93,6 +101,10 @@ export default function RegisterStep1() {
       const response = await generateEmailKycOtp(email);
       if (response.success) {
         // capture reference returned for email OTP verification
+        const otp = response.data?.otp_code ?? null;
+        setEmailOtp(otp);
+        // autofill form field
+        setValue("emailOtp", otp ?? "");
         const ref = (response.data as any)?.reference as string | undefined;
         if (ref) {
           setEmailOtpRef(ref);

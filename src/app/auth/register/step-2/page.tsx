@@ -8,6 +8,7 @@ import { aadhaarSchema, panSchema, otpSchema } from "@/lib/validators";
 import { Button, ErrorText, Input, Label } from "@/app/components/ui";
 import { sendOtp, generateAadhaarOtp, verifyAadhaarOtp, verifyPanNumber } from "@/lib/api";
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 import Stepper from "@/app/components/ui/Stepper";
 
 const schema = z.object({
@@ -127,6 +128,35 @@ export default function RegisterStep2() {
     }
   }
 
+  const router = useRouter();
+
+  // Continue button should verify PAN and redirect when both verified
+  async function handleContinue() {
+    setVerifyingPan(true);
+    try {
+      const pan = getValues("pan")?.trim();
+      if (!pan) {
+        alert("Please enter PAN number.");
+        return;
+      }
+      const res = await verifyPanNumber(pan);
+      const ok = Boolean(res.success && res.data?.verified);
+      setPanVerified(ok);
+      if (!ok) {
+        alert(res.error || "PAN verification failed.");
+        return;
+      }
+      // if both Aadhaar and PAN are verified, proceed
+      if (aadhaarVerified && ok) {
+        router.push("/auth/register/step-3");
+      }
+    } catch (err) {
+      alert("An error occurred while verifying PAN.");
+    } finally {
+      setVerifyingPan(false);
+    }
+  }
+
   const bothVerified = aadhaarVerified && panVerified;
 
   return (
@@ -228,13 +258,6 @@ export default function RegisterStep2() {
               maxLength={10}
               {...register("pan")}
             />
-            <Button
-              type="button"
-              onClick={onVerifyPanOtp}
-              loading={loadingPanOtp}
-            >
-              {panVerified ? "Verified" : "Verify Pan"}
-            </Button>
             {panVerified && (
               <div className="h-10 w-10 rounded-lg bg-emerald-600 grid place-items-center ml-2">
                 <svg
@@ -309,20 +332,20 @@ export default function RegisterStep2() {
           >
             Back
           </Link>
-          <Button type="button" loading={false}>
+          <Button type="button" onClick={handleContinue} loading={verifyingPan}>
             Continue
           </Button>
         </div>
       </form>
 
-      {bothVerified && (
+      {/* {bothVerified && (
         <Link
           href="/auth/register/step-3"
           className="h-11 rounded-md bg-emerald-600 text-white grid place-items-center"
         >
           Proceed to Step 3
         </Link>
-      )}
+      )} */}
     </div>
   );
 }

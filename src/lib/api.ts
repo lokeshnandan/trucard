@@ -416,8 +416,11 @@ export async function registerAccount(acceptedTerms: boolean): Promise<ApiRespon
 
 export async function resetPassword(): Promise<ApiResponse<{ message?: string; status?: number }>> {
     try {
+        // prefer persisted user_id, fallback to constant
+        const userId = localStorage.getItem("user_id") ?? "bfb3597d-d937-43d2-b7bd-bcb7d8305576";
+
         const payload = {
-            user_id: "bfb3597d-d937-43d2-b7bd-bcb7d8305576",
+            user_id: userId,
             purpose: "password_reset",
         };
 
@@ -452,9 +455,12 @@ export async function verifyResetPassword(otp: string, password: string): Promis
             return { success: false, error: "Missing registration_ref_id_reset. Please request password reset OTP first." };
         }
 
+        // prefer persisted user_id, fallback to constant
+        const userId = localStorage.getItem("user_id") ?? "bfb3597d-d937-43d2-b7bd-bcb7d8305576";
+
         const payload = {
             ref_id: refId,
-            user_id: "bfb3597d-d937-43d2-b7bd-bcb7d8305576",
+            user_id: userId,
             password,
             otp,
         };

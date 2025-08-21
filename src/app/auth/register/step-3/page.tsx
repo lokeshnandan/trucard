@@ -8,6 +8,7 @@ import { Button, ErrorText, Input, Label } from "@/app/components/ui";
 import { useState } from "react";
 import Stepper from "@/app/components/ui/Stepper";
 import { registerAccount } from "@/lib/api";
+import { useRouter } from "next/navigation";
 
 // z.literal(true) with a custom message while preserving strict typing
 const termsLiteral = z.literal(true);
@@ -52,13 +53,23 @@ export default function RegisterStep3() {
   // watch terms checkbox to enable/disable submit button
   const termsAccepted = watch("terms");
   const [loading, setLoading] = useState(false);
+  const router = useRouter();
 
   async function onSubmit() {
     setLoading(true);
     try {
       const res = await registerAccount(!!termsAccepted);
       if (res.success) {
-        window.location.href = "/auth/success";
+        // try to read user_id from response and persist / forward it
+        const username = (res.data as any)?.username as string | undefined;
+        if (username) {
+          try {
+            localStorage.setItem("registered_user_id", String(username));
+          } catch {}
+        }
+        // navigate to success page with user_id as query param (if available)
+        const target = username ? `/auth/success?user_id=${encodeURIComponent(String(username))}` : "/auth/success";
+        router.push(target);
       } else {
         alert(res.error || "Registration failed");
       }

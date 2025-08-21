@@ -31,7 +31,21 @@ export default function LoginPage() {
     setLoading(true);
     setError(null);
     const result = await login(values);
+    console.log("Login result:", result.data);
     setLoading(false);
+
+    // if backend requests password reset (status 1001), persist user_id and redirect
+    if ((result.data as any)?.status === 1001) {
+      const userId = (result.data as any)?.user_id;
+      if (userId) {
+        try {
+          localStorage.setItem("user_id", String(userId));
+        } catch {}
+      }
+      window.location.href = "/auth/resetPassword";
+      return;
+    }
+
     if (result.success) {
       // Redirect or show success
       // window.location.href = "/dashboard"; 
